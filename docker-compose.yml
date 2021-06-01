@@ -1,0 +1,26 @@
+version: '3'
+services:
+    php-web:
+        build: ./services/apache
+        image: nodeapp-demo
+        ports:
+            - 80:80
+        volumes:
+            - ./:/var/www:z
+        links:
+            - 'mariadb'
+        env_file:
+            - .env
+
+    mariadb:
+        image: mariadb:10.1
+        ports:
+            - 3306:3306
+        volumes:
+            - mariadb:/var/lib/mysql:delegated
+            - ./dump/dump.sql:/docker-entrypoint-initdb.d/dump.sql
+        env_file:
+            - .env
+
+volumes:
+    mariadb:

@@ -1,0 +1,20 @@
+{
+    "name": "markirnanflores/php-test",
+    "description": "Backend developer test",
+    "authors": [
+        {
+            "name": "Mark Flores",
+            "email": "info@markirnanflores.com"
+        }
+    ],
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^3.6",
+        "phpunit/phpunit": "^8"
+    },
+    "autoload": {
+        "psr-4": { "App\\": "" }
+    },
+    "scripts": {
+        "test": "phpunit"
+    }
+}
