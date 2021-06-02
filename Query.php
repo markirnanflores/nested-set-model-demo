@@ -6,6 +6,10 @@ use PDO;
 
 class Query
 {
+    /**
+     * Static function to make a select to the database
+     * @return array
+     */
     public static function select(PDO $connection, string $query, array $parameters, bool $ismultiple = true)
     {
         try {

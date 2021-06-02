@@ -9,11 +9,17 @@ use \PDO;
 
 final class DatabaseTest extends TestCase
 {
+    /**
+     * Check if Database can get the configuration values
+     */
     public function testDatabaseConfiguration()
     {
         $this->assertEquals(true, is_array(Database::configuration()));
     }
 
+    /**
+     * Check if a connection can be made
+     */
     public function testDatabaseConnection()
     {
         $this->assertInstanceOf(PDO::class, Database::connection());

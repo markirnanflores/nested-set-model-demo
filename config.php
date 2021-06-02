@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Database info configuration
+ */
+
 return [
     'username' => 'root',
     'password' => 'rtrndpswd',

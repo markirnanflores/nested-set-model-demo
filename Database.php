@@ -7,11 +7,19 @@ use PDOException;
 
 class Database
 {
+    /**
+     * Get array value from config.php
+     * @return array
+     */
     public static function configuration()
     {
         return require(dirname(__FILE__) . '/config.php');
     }
 
+    /**
+     * Create a database connection with PDO
+     * @return PDO
+     */
     public static function connection(string $charset = '')
     {
         $config = self::configuration();

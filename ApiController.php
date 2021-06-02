@@ -7,39 +7,49 @@ use Exception;
 
 class ApiController
 {
+    public const HTTP_METHOD_NOT_ALLOWED_RESPONSE = "Method Not Allowed";
     public const HTTP_METHOD_GET = 'GET';
     public const ERROR_MSG_REQUIRED_PARAMS = 'Missing mandatory params.';
     public const ERROR_MSG_NODE_ID = 'Invalid node id.';
     public const ERROR_MSG_LANGUAGE = 'Invalid language.';
     public const ERROR_MSG_PAGE_NUMBER = 'Invalid page number requested.';
     public const ERROR_MSG_PAGE_SIZE = 'Invalid page size requested.';
+    public const INVALID_VALUE = 'invalid_value';
 
+    protected $getRequiredInput = ['node_id','language'];
+
+    /**
+     * Display listing of nodes
+     *
+     * @return json
+     */
     public function get()
     {
-        $method = self::HTTP_METHOD_GET;
-        $requiredInput = ['node_id','language'];
-        $validLanguages = ['english','italian'];
-        $obj = ['nodes' => array()];
-
-        if (detectRequestMethod() != $method) {
-            header("HTTP/1.0 405 Method Not Allowed");
-            return;
+        if (detectRequestMethod() != self::HTTP_METHOD_GET) {
+            return httpMethodNotAllowedResponse(self::HTTP_METHOD_NOT_ALLOWED_RESPONSE);
         }
 
         try {
-            if (!$requestInputs = validateRequestInput($requiredInput, $method)) {
+            if (!$requestInputs = validateRequestInput($this->getRequiredInput, self::HTTP_METHOD_GET)) {
                 throw new Exception(self::ERROR_MSG_REQUIRED_PARAMS);
             }
             $inputs = $this->prepareInputs($requestInputs);
         } catch (Exception $e) {
-            $obj['error'] = $e->getMessage();
             httpJsonResponse(
                 'HTTP/1.0 200',
-                $obj
+                [
+                    'nodes' => [],
+                    'error' => $e->getMessage()
+                ]
             );
             return;
         }
 
+        /**
+         * When search_keyword is provided, restrict
+         * the results to "all children nodes under ​node_id​ whose ​nodeName​ in the given ​language
+         * contains ​search_keyword​ (case insensitive)".
+         */
         if (strlen($inputs['search_keyword']) > 0) {
             $obj['nodes'] = Node::findFiltered(
                 $inputs['node_id'],
@@ -63,37 +73,107 @@ class ApiController
         );
     }
 
-    protected function prepareInputs($inputs)
+    /**
+     * Prepare parameter for Node class
+     * @param array
+     * @throws Exception
+     * @return array
+     */
+    protected function prepareInputs(array $inputs)
     {
-        $inputs['node_id'] = preg_match("/^[1-9]\d*$/", $inputs['node_id']) ? intval($inputs['node_id']) : 0;
+        $inputs['node_id'] = $this->validateNodeId($inputs['node_id']);
+        $inputs['language'] = $this->validateLanguage($inputs['language']);
+        //Optional value, no validation needed
+        $inputs['search_keyword'] = is_string($inputs['search_keyword']) ? $inputs['search_keyword'] : '';
+        $inputs['page_num'] = $this->validatePageNum($inputs['page_num']);
+        $inputs['page_size'] = $this->validatePageSize($inputs['page_size']);
 
-        if ($inputs['node_id'] == 0) {
+        return $inputs;
+    }
+
+    /**
+     * Validate node id parameter
+     * @param number
+     * @throws Exception
+     * @return int
+     */
+    protected function validateNodeId($id)
+    {
+        /**
+         * id must be an integer
+         */
+        $id = preg_match("/^[1-9]\d*$/", $id) ? intval($id) : self::INVALID_VALUE;
+
+        if ($id == self::INVALID_VALUE) {
             throw new Exception(self::ERROR_MSG_NODE_ID);
         }
 
-        $inputs['language'] = preg_match("/english|italian/", $inputs['language']) ? $inputs['language'] : '';
+        return $id;
+    }
 
-        if ($inputs['node_id'] == 0) {
-            throw new Exception(self::ERROR_MSG_NODE_LANGUAGE);
+    /**
+     * Validate language parameter
+     * @param string
+     * @throws Exception
+     * @return string
+     */
+    protected function validateLanguage($language)
+    {
+        /**
+         * Possible values: "english", "italian".
+         */
+        $language = preg_match("/^english$|^italian$/", $language) ? $language : '';
+
+        if (strlen($language) == 0) {
+            throw new Exception(self::ERROR_MSG_LANGUAGE);
         }
 
-        $inputs['search_keyword'] = is_string($inputs['search_keyword']) ? $inputs['search_keyword'] : '';
+        return $language;
+    }
 
-        $inputs['page_num'] = isset($inputs['page_num'])
-        ? (preg_match("/^[0-9]\d*$/", $inputs['page_num']) ? intval($inputs['page_num']) : 'error') : 0;
+    /**
+     * Validate page number parameter
+     * @param int
+     * @throws Exception
+     * @return int
+     */
+    protected function validatePageNum($number)
+    {
+        /**
+         * If number is null, set it to “0”.
+         * If number is not numeric throw exception
+         */
+        $number = isset($number)
+        ? (preg_match("/^[0-9]\d*$/", $number) ? intval($number) : self::INVALID_VALUE) : 0;
 
-        if ($inputs['page_num'] === 'error') {
+        if ($number === self::INVALID_VALUE) {
             throw new Exception(self::ERROR_MSG_PAGE_NUMBER);
         }
 
-        $inputs['page_size'] = isset($inputs['page_size'])
-        ? (preg_match("/^(0|[1-9][0-9]{0,2}|1000)$/", $inputs['page_size']) ? intval($inputs['page_size']) : 'error')
+        return $number;
+    }
+
+    /**
+     * Validate page size parameter
+     * @param int
+     * @throws Exception
+     * @return int
+     */
+    protected function validatePageSize($size)
+    {
+        /**
+         * size value must range from 0 to 1000.
+         * If not provided, defaults to “100”.
+         */
+        $size = isset($size)
+        ? (preg_match("/^(0|[1-9][0-9]{0,2}|1000)$/", $size) ? intval($size)
+        : self::INVALID_VALUE)
         : 100;
 
-        if ($inputs['page_size'] === 'error') {
+        if ($size === self::INVALID_VALUE) {
             throw new Exception(self::ERROR_MSG_PAGE_SIZE);
         }
 
-        return $inputs;
+        return $size;
     }
 }

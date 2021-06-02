@@ -9,6 +9,9 @@ use \PDO;
 
 final class NodeTest extends TestCase
 {
+    /**
+     * Test if Node::findAll returns an array
+     */
     public function testFindAll()
     {
         $this->assertEquals(
@@ -24,6 +27,9 @@ final class NodeTest extends TestCase
         );
     }
 
+    /**
+     * Test if Node::findFiltered returns an array
+     */
     public function testFindFiltered()
     {
         $this->assertEquals(
