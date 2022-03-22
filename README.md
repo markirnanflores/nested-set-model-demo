@@ -1,4 +1,4 @@
-Php app demo using Nested set model. (see https://en.wikipedia.org/wiki/Nested_set_model​ for further details).
+Php app demo using Nested set model. (see https://en.wikipedia.org/wiki/Nested_set_model for further details).
 
 This repo is made to be used with Docker Compose.
 Docker settings can be change inside docker-compose.yml file.
